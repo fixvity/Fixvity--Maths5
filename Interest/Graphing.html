@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced Graphing Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+  --primary:#2563eb;
+  --bg:#f4f7fb;
+  --card:#ffffff;
+  --text:#111827;
+  --muted:#6b7280;
+  --radius:14px;
+  --shadow:0 10px 30px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,system-ui,Arial;
+  background:var(--bg);
+  color:var(--text);
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:16px;
+}
+
+/* HEADER */
+.header{
+  background:var(--card);
+  padding:22px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  text-align:center;
+}
+.header h1{margin:0;color:var(--primary)}
+.header p{margin-top:6px;color:var(--muted)}
+
+/* GRID */
+.grid{
+  display:grid;
+  grid-template-columns:360px 1fr;
+  gap:18px;
+}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
+}
+
+/* CARDS */
+.card{
+  background:var(--card);
+  padding:20px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+
+/* FORM */
+.field{margin-bottom:14px}
+label{font-weight:600;font-size:14px}
+input,select{
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+}
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  background:var(--primary);
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+
+/* TABLE */
+.table-wrap{
+  max-height:300px;
+  overflow:auto;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th{
+  background:var(--primary);
+  color:#fff;
+  padding:10px;
+  position:sticky;
+  top:0;
+}
+td{
+  padding:8px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:right;
+}
+td:first-child{text-align:left}
+
+/* MOBILE FIX */
+@media(max-width:768px){
+  .table-wrap{overflow-x:hidden}
+  table{min-width:100%}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<div class="header">
+<h1>Advanced Graphing Calculator</h1>
+<p>Functions • Derivatives • Integrals • Tables • Multi-Graphs</p>
+</div>
+
+<div class="grid">
+
+<!-- LEFT PANEL -->
+<div class="card">
+
+<div class="field">
+<label>Function f(x)</label>
+<input id="expr" value="Math.sin(x)">
+</div>
+
+<div class="field">
+<label>X Min</label>
+<input id="xmin" value="-10">
+</div>
+
+<div class="field">
+<label>X Max</label>
+<input id="xmax" value="10">
+</div>
+
+<div class="field">
+<label>Derivative at x</label>
+<input id="dx" value="1">
+</div>
+
+<div class="field">
+<label>Integral from a to b</label>
+<input id="ia" value="0">
+<input id="ib" value="3.14" style="margin-top:6px">
+</div>
+
+<button onclick="plot()">Plot Graph</button>
+
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="card">
+
+<canvas id="chart" height="260"></canvas>
+
+<h3>Table of Values</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>x</th><th>f(x)</th></tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
+</div>
+
+</div>
+
+</div>
+</div>
+
+<script>
+let chart;
+
+function f(x){
+  try{
+    return eval(expr.value);
+  }catch{
+    return NaN;
+  }
+}
+
+function derivative(x){
+  const h=1e-4;
+  return (f(x+h)-f(x-h))/(2*h);
+}
+
+function integrate(a,b){
+  let n=400, h=(b-a)/n, sum=0;
+  for(let i=0;i<n;i++){
+    let x1=a+i*h;
+    let x2=x1+h;
+    sum+=(f(x1)+f(x2))*h/2;
+  }
+  return sum;
+}
+
+function plot(){
+  const xs=[], ys=[];
+  const x0=+xmin.value, x1=+xmax.value;
+  const step=(x1-x0)/300;
+
+  for(let x=x0;x<=x1;x+=step){
+    let y=f(x);
+    if(isFinite(y)){
+      xs.push(x);
+      ys.push(y);
+    }
+  }
+
+  chart?.destroy();
+  chart=new Chart(chart,{
+    type:"line",
+    data:{
+      labels:xs,
+      datasets:[{
+        label:"f(x)",
+        data:ys,
+        borderColor:"#2563eb",
+        fill:false,
+        tension:0.3
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}}
+    }
+  });
+
+  // Table
+  table.innerHTML="";
+  xs.slice(0,40).forEach((x,i)=>{
+    table.innerHTML+=`<tr><td>${x.toFixed(2)}</td><td>${ys[i].toFixed(4)}</td></tr>`;
+  });
+
+  console.log("Derivative:",derivative(+dx.value));
+  console.log("Integral:",integrate(+ia.value,+ib.value));
+}
+
+plot();
+</script>
+</body>
+</html>
