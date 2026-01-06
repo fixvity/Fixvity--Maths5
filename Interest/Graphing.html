@@ -41,48 +41,75 @@ body{
 .header h1{margin:0;color:var(--primary)}
 .header p{margin-top:6px;color:var(--muted)}
 
-/* GRID */
+/* LAYOUT */
 .grid{
   display:grid;
-  grid-template-columns:360px 1fr;
+  grid-template-columns:320px 1fr;
   gap:18px;
+  margin-top:18px;
 }
 @media(max-width:900px){
   .grid{grid-template-columns:1fr}
 }
 
-/* CARDS */
+/* CARD */
 .card{
   background:var(--card);
-  padding:20px;
+  padding:18px;
   border-radius:var(--radius);
   box-shadow:var(--shadow);
 }
 
-/* FORM */
-.field{margin-bottom:14px}
+/* INPUTS */
 label{font-weight:600;font-size:14px}
-input,select{
+input{
   width:100%;
   padding:10px;
   margin-top:6px;
-  border-radius:8px;
+  margin-bottom:14px;
+  border-radius:10px;
   border:1px solid #e5e7eb;
+  font-size:15px;
 }
 button{
   width:100%;
   padding:12px;
   border:none;
   border-radius:10px;
-  background:var(--primary);
-  color:#fff;
   font-weight:700;
   cursor:pointer;
+}
+.primary{background:var(--primary);color:#fff}
+.secondary{background:#eef2f7}
+
+/* GRAPH AREA */
+.canvas-wrap{
+  background:var(--card);
+  padding:16px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+canvas{height:340px!important}
+
+/* ACTIONS */
+.action-row{
+  display:flex;
+  gap:12px;
+  margin-top:12px;
+}
+.action-row button{
+  flex:1;
+  background:var(--primary);
+  color:#fff;
+}
+@media(max-width:600px){
+  .action-row{flex-direction:column}
 }
 
 /* TABLE */
 .table-wrap{
-  max-height:300px;
+  margin-top:16px;
+  max-height:280px;
   overflow:auto;
   border:1px solid #e5e7eb;
   border-radius:12px;
@@ -90,6 +117,7 @@ button{
 table{
   width:100%;
   border-collapse:collapse;
+  min-width:520px;
 }
 th{
   background:var(--primary);
@@ -99,16 +127,17 @@ th{
   top:0;
 }
 td{
-  padding:8px;
+  padding:10px;
   border-bottom:1px solid #e5e7eb;
   text-align:right;
 }
 td:first-child{text-align:left}
 
-/* MOBILE FIX */
+/* MOBILE TABLE FIX */
 @media(max-width:768px){
   .table-wrap{overflow-x:hidden}
   table{min-width:100%}
+  th,td{font-size:14px;white-space:nowrap}
 }
 </style>
 </head>
@@ -118,49 +147,39 @@ td:first-child{text-align:left}
 
 <div class="header">
 <h1>Advanced Graphing Calculator</h1>
-<p>Functions • Derivatives • Integrals • Tables • Multi-Graphs</p>
+<p>Plot functions, derivatives, integrals, tables & share graphs instantly</p>
 </div>
 
 <div class="grid">
 
-<!-- LEFT PANEL -->
+<!-- LEFT -->
 <div class="card">
-
-<div class="field">
 <label>Function f(x)</label>
-<input id="expr" value="Math.sin(x)">
-</div>
+<input id="fx" value="x*x">
 
-<div class="field">
-<label>X Min</label>
-<input id="xmin" value="-10">
-</div>
-
-<div class="field">
-<label>X Max</label>
-<input id="xmax" value="10">
-</div>
-
-<div class="field">
 <label>Derivative at x</label>
 <input id="dx" value="1">
-</div>
 
-<div class="field">
 <label>Integral from a to b</label>
-<input id="ia" value="0">
-<input id="ib" value="3.14" style="margin-top:6px">
+<input id="a" value="0">
+<input id="b" value="2">
+
+<button class="primary" onclick="plot()">Plot Graph</button>
+<button class="secondary" onclick="resetAll()">Reset</button>
 </div>
 
-<button onclick="plot()">Plot Graph</button>
+<!-- RIGHT -->
+<div>
+<div class="canvas-wrap">
+<canvas id="graphCanvas"></canvas>
 
+<div class="action-row">
+<button onclick="downloadGraph()">📥 Download</button>
+<button onclick="copyShareLink()">🔗 Share</button>
+</div>
 </div>
 
-<!-- RIGHT PANEL -->
-<div class="card">
-
-<canvas id="chart" height="260"></canvas>
-
+<div class="card" style="margin-top:16px">
 <h3>Table of Values</h3>
 <div class="table-wrap">
 <table>
@@ -170,7 +189,6 @@ td:first-child{text-align:left}
 <tbody id="table"></tbody>
 </table>
 </div>
-
 </div>
 
 </div>
@@ -178,74 +196,96 @@ td:first-child{text-align:left}
 
 <script>
 let chart;
+const fxInput = document.getElementById("fx");
+const dxInput = document.getElementById("dx");
+const aInput = document.getElementById("a");
+const bInput = document.getElementById("b");
 
 function f(x){
-  try{
-    return eval(expr.value);
-  }catch{
-    return NaN;
-  }
+  return Function("x","return "+fxInput.value)(x);
 }
-
 function derivative(x){
-  const h=1e-4;
+  const h=0.0001;
   return (f(x+h)-f(x-h))/(2*h);
 }
 
-function integrate(a,b){
-  let n=400, h=(b-a)/n, sum=0;
-  for(let i=0;i<n;i++){
-    let x1=a+i*h;
-    let x2=x1+h;
-    sum+=(f(x1)+f(x2))*h/2;
-  }
-  return sum;
-}
-
 function plot(){
-  const xs=[], ys=[];
-  const x0=+xmin.value, x1=+xmax.value;
-  const step=(x1-x0)/300;
-
-  for(let x=x0;x<=x1;x+=step){
-    let y=f(x);
-    if(isFinite(y)){
-      xs.push(x);
-      ys.push(y);
-    }
+  const xs=[],ys=[],der=[],shade=[];
+  for(let x=-10;x<=10;x+=0.1){
+    xs.push(x);
+    ys.push(f(x));
+    der.push(derivative(x));
+    if(x>=+aInput.value && x<=+bInput.value) shade.push(f(x));
+    else shade.push(null);
   }
 
   chart?.destroy();
-  chart=new Chart(chart,{
+  chart=new Chart(graphCanvas,{
     type:"line",
     data:{
       labels:xs,
-      datasets:[{
-        label:"f(x)",
-        data:ys,
-        borderColor:"#2563eb",
-        fill:false,
-        tension:0.3
-      }]
+      datasets:[
+        {label:"f(x)",data:ys,borderColor:"#2563eb",fill:false},
+        {label:"Derivative",data:der,borderColor:"#16a34a",borderDash:[6,6],fill:false},
+        {label:"Integral Area",data:shade,borderColor:"#f59e0b",backgroundColor:"rgba(245,158,11,.25)",fill:true}
+      ]
     },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false}}
-    }
+    options:{responsive:true,maintainAspectRatio:false}
   });
 
-  // Table
+  renderTable(xs,ys);
+}
+
+function renderTable(xs,ys){
   table.innerHTML="";
-  xs.slice(0,40).forEach((x,i)=>{
-    table.innerHTML+=`<tr><td>${x.toFixed(2)}</td><td>${ys[i].toFixed(4)}</td></tr>`;
-  });
+  for(let i=0;i<xs.length;i+=10){
+    table.innerHTML+=`<tr><td>${xs[i].toFixed(2)}</td><td>${ys[i].toFixed(4)}</td></tr>`;
+  }
+}
 
-  console.log("Derivative:",derivative(+dx.value));
-  console.log("Integral:",integrate(+ia.value,+ib.value));
+/* SAVE IMAGE */
+function downloadGraph(){
+  const link=document.createElement("a");
+  link.download="graph.png";
+  link.href=graphCanvas.toDataURL("image/png");
+  link.click();
+}
+
+/* SHARE URL */
+function copyShareLink(){
+  const state={
+    fx:fxInput.value,
+    a:aInput.value,
+    b:bInput.value
+  };
+  const encoded=encodeURIComponent(JSON.stringify(state));
+  const url=location.origin+location.pathname+"?g="+encoded;
+  navigator.clipboard.writeText(url);
+  alert("Share link copied!");
+}
+
+/* RESTORE */
+(function(){
+  const p=new URLSearchParams(location.search);
+  if(!p.has("g")) return;
+  try{
+    const s=JSON.parse(decodeURIComponent(p.get("g")));
+    fxInput.value=s.fx;
+    aInput.value=s.a;
+    bInput.value=s.b;
+    plot();
+  }catch{}
+})();
+
+function resetAll(){
+  fxInput.value="x*x";
+  aInput.value=0;
+  bInput.value=2;
+  plot();
 }
 
 plot();
 </script>
+
 </body>
 </html>
