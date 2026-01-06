@@ -5,165 +5,101 @@
 <title>Graphing Calculator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
-<!-- Zoom Plugin -->
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto;
-  background:#f4f6fb;
-}
-.app{
-  display:flex;
-  height:100vh;
-}
+body{margin:0;font-family:system-ui;background:#f4f6fb}
+.app{display:flex;height:100vh}
+
 .sidebar{
-  width:320px;
-  background:#fff;
-  border-right:1px solid #ddd;
-  padding:14px;
-  overflow:auto;
+  width:340px;background:#fff;border-right:1px solid #ddd;
+  padding:14px;overflow:auto
 }
 @media(max-width:900px){
   .app{flex-direction:column}
-  .sidebar{
-    width:100%;
-    border-right:none;
-    border-bottom:1px solid #ddd;
-  }
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid #ddd}
 }
-h2{
-  margin:0 0 10px;
-  color:#2563eb;
-}
-label{
-  font-size:14px;
-  font-weight:600;
-}
+
+h2{margin:0 0 10px;color:#2563eb}
+label{font-size:14px;font-weight:600}
 input{
-  width:100%;
-  padding:10px;
-  margin:6px 0 12px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  font-size:15px;
+  width:100%;padding:10px;margin:6px 0 12px;
+  border-radius:8px;border:1px solid #ccc;font-size:15px
 }
 button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  font-weight:700;
-  cursor:pointer;
+  width:100%;padding:12px;border:none;border-radius:10px;
+  font-weight:700;cursor:pointer
 }
 .primary{background:#2563eb;color:#fff}
 .secondary{background:#eef2ff;color:#111;margin-top:8px}
 
-.graph-area{
-  flex:1;
-  position:relative;
-  background:#fff;
-}
-canvas{
-  width:100%!important;
-  height:100%!important;
-}
+.graph-area{flex:1;position:relative;background:#fff}
+canvas{width:100%!important;height:100%!important}
 
-/* Floating controls */
 .controls{
-  position:absolute;
-  right:12px;
-  bottom:12px;
-  display:flex;
-  gap:10px;
+  position:absolute;right:12px;bottom:12px;
+  display:flex;gap:10px
 }
-.ctrl-btn{
-  width:44px;
-  height:44px;
-  border-radius:50%;
-  border:none;
-  font-size:20px;
-  background:#2563eb;
-  color:#fff;
-  cursor:pointer;
+.ctrl{
+  width:44px;height:44px;border-radius:50%;
+  background:#2563eb;color:#fff;border:none;
+  font-size:20px;cursor:pointer
 }
 
-/* Table */
 .table-wrap{
-  margin-top:12px;
-  max-height:220px;
-  overflow:auto;
-  border:1px solid #e5e7eb;
-  border-radius:10px;
+  margin-top:12px;max-height:220px;overflow:auto;
+  border:1px solid #e5e7eb;border-radius:10px
 }
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:420px;
-}
+table{width:100%;border-collapse:collapse}
 th{
-  background:#2563eb;
-  color:#fff;
-  padding:8px;
-  position:sticky;
-  top:0;
+  background:#2563eb;color:#fff;padding:8px;
+  position:sticky;top:0
 }
-td{
-  padding:8px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:right;
-}
+td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:right}
 td:first-child{text-align:left}
-
-/* Mobile table fix */
-@media(max-width:768px){
-  table{min-width:100%}
-  .table-wrap{overflow-x:hidden}
-}
 </style>
 </head>
 
 <body>
 <div class="app">
 
-<!-- LEFT PANEL -->
+<!-- SIDEBAR -->
 <div class="sidebar">
-  <h2>Graphing Calculator</h2>
+<h2>Graphing Calculator</h2>
 
-  <label>Function f(x)</label>
-  <input id="fx" value="sin(x)">
+<label>f(x)</label>
+<input id="f1" value="sin(x)">
 
-  <label>x min</label>
-  <input id="xmin" value="-10">
+<label>g(x)</label>
+<input id="f2" value="x*x">
 
-  <label>x max</label>
-  <input id="xmax" value="10">
+<label>h(x)</label>
+<input id="f3" value="">
 
-  <button class="primary" onclick="plot()">Plot Graph</button>
-  <button class="secondary" onclick="resetZoom()">Reset Zoom</button>
+<label>Tangent at x</label>
+<input id="tx" value="1">
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>x</th><th>f(x)</th></tr>
-      </thead>
-      <tbody id="table"></tbody>
-    </table>
-  </div>
+<button class="primary" onclick="plot()">Plot</button>
+<button class="secondary" onclick="resetZoom()">Reset Zoom</button>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>x</th><th>f(x)</th></tr></thead>
+<tbody id="table"></tbody>
+</table>
+</div>
 </div>
 
 <!-- GRAPH -->
 <div class="graph-area">
-  <canvas id="graph"></canvas>
+<canvas id="graph"></canvas>
 
-  <div class="controls">
-    <button class="ctrl-btn" onclick="zoomIn()">+</button>
-    <button class="ctrl-btn" onclick="zoomOut()">−</button>
-  </div>
+<div class="controls">
+<button class="ctrl" onclick="chart.zoom(1.2)">+</button>
+<button class="ctrl" onclick="chart.zoom(0.8)">−</button>
+</div>
 </div>
 
 </div>
@@ -172,33 +108,36 @@ td:first-child{text-align:left}
 let chart;
 const table=document.getElementById("table");
 
-function f(x){
-  try{
-    return Function("x","with(Math){return "+fx.value+"}")(x);
-  }catch{
-    return null;
-  }
+function fx(expr,x){
+  try{return Function("x","with(Math){return "+expr+"}")(x)}
+  catch{return null}
+}
+
+function derivative(expr,x){
+  const h=1e-4;
+  return (fx(expr,x+h)-fx(expr,x-h))/(2*h);
 }
 
 function plot(){
-  const xmin=+document.getElementById("xmin").value;
-  const xmax=+document.getElementById("xmax").value;
-
-  const xs=[], ys=[];
+  const xs=[], f1y=[], f2y=[], f3y=[];
   table.innerHTML="";
 
-  for(let x=xmin;x<=xmax;x+=(xmax-xmin)/400){
-    const y=f(x);
-    if(y!==null && isFinite(y)){
-      xs.push(x);
-      ys.push(y);
-    }
+  for(let x=-10;x<=10;x+=0.05){
+    xs.push(x);
+    f1y.push(fx(f1.value,x));
+    f2y.push(f2.value?fx(f2.value,x):null);
+    f3y.push(f3.value?fx(f3.value,x):null);
   }
 
-  // Table values
+  // Tangent line
+  const x0=+tx.value;
+  const y0=fx(f1.value,x0);
+  const m=derivative(f1.value,x0);
+  const tan=xs.map(x=>m*(x-x0)+y0);
+
+  // Table
   for(let i=0;i<xs.length;i+=40){
-    table.innerHTML+=
-      `<tr><td>${xs[i].toFixed(2)}</td><td>${ys[i].toFixed(4)}</td></tr>`;
+    table.innerHTML+=`<tr><td>${xs[i].toFixed(2)}</td><td>${f1y[i]?.toFixed(4)}</td></tr>`;
   }
 
   chart?.destroy();
@@ -206,63 +145,37 @@ function plot(){
     type:"line",
     data:{
       labels:xs,
-      datasets:[{
-        label:"f(x)",
-        data:ys,
-        borderColor:"#2563eb",
-        borderWidth:2,
-        pointRadius:0,
-        fill:false
-      }]
+      datasets:[
+        {label:"f(x)",data:f1y,borderColor:"#2563eb",pointRadius:0},
+        {label:"g(x)",data:f2y,borderColor:"#16a34a",pointRadius:0},
+        {label:"h(x)",data:f3y,borderColor:"#f59e0b",pointRadius:0},
+        {label:"Tangent",data:tan,borderColor:"#dc2626",borderDash:[6,6],pointRadius:0}
+      ]
     },
     options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      interaction:{
-        mode:"nearest",
-        intersect:false
-      },
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:"nearest",intersect:false},
       plugins:{
         zoom:{
-          pan:{
-            enabled:true,
-            mode:"xy"
-          },
-          zoom:{
-            wheel:{enabled:true},
-            pinch:{enabled:true},
-            mode:"xy"
-          }
+          pan:{enabled:true,mode:"xy"},
+          zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"xy"}
         },
-        legend:{display:true}
+        tooltip:{
+          callbacks:{
+            label:(ctx)=>`x=${ctx.label.toFixed(2)}, y=${ctx.parsed.y?.toFixed(4)}`
+          }
+        }
       },
       scales:{
-        x:{
-          type:"linear",
-          grid:{color:"#e5e7eb"}
-        },
-        y:{
-          grid:{color:"#e5e7eb"}
-        }
+        x:{type:"linear"},
+        y:{}
       }
     }
   });
 }
 
-function resetZoom(){
-  chart.resetZoom();
-}
-
-function zoomIn(){
-  chart.zoom(1.2);
-}
-function zoomOut(){
-  chart.zoom(0.8);
-}
-
-/* Double-tap / double-click reset */
+function resetZoom(){chart.resetZoom()}
 graph.addEventListener("dblclick",resetZoom);
-
 plot();
 </script>
 
