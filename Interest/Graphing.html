@@ -3,328 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <title>Advanced Graphing Calculator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-:root{
-  --primary:#2563eb;
-  --bg:#f4f7fb;
-  --card:#ffffff;
-  --text:#111827;
-  --muted:#6b7280;
-  --radius:14px;
-  --shadow:0 10px 30px rgba(0,0,0,.08);
-}
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter,system-ui,Arial;
-  background:var(--bg);
-  color:var(--text);
-}
-.container{
-  max-width:1200px;
-  margin:auto;
-  padding:16px;
-}
-
-/* HEADER */
-.header{
-  background:var(--card);
-  padding:22px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  text-align:center;
-}
-.header h1{margin:0;color:var(--primary)}
-.header p{margin-top:6px;color:var(--muted)}
-
-/* LAYOUT */
-.grid{
-  display:grid;
-  grid-template-columns:320px 1fr;
-  gap:18px;
-  margin-top:18px;
+body{margin:0;font-family:system-ui;background:#f4f6fb}
+.app{display:flex;height:100vh}
+.sidebar{
+  width:340px;background:#fff;border-right:1px solid #ddd;
+  padding:12px;overflow:auto
 }
 @media(max-width:900px){
-  .grid{grid-template-columns:1fr}
+  .app{flex-direction:column}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid #ddd}
 }
-
-/* CARD */
-.card{
-  background:var(--card);
-  padding:18px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
+h3{margin:8px 0}
+label{font-size:14px;font-weight:600}
+input,select{
+  width:100%;padding:8px;margin-top:6px;
+  border-radius:6px;border:1px solid #ccc
 }
-
-/* INPUTS */
-label{font-weight:600;font-size:14px}
-input{
-  width:100%;
-  padding:10px;
-  margin-top:6px;
-  margin-bottom:14px;
-  border-radius:10px;
-  border:1px solid #e5e7eb;
-  font-size:15px;
+.row{margin-bottom:10px}
+.btn{
+  width:100%;padding:10px;margin-top:8px;
+  border:none;border-radius:6px;
+  background:#2563eb;color:#fff;
+  font-weight:700;cursor:pointer
 }
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  font-weight:700;
-  cursor:pointer;
+.btn.alt{background:#eef2ff;color:#111}
+.graph-area{flex:1;position:relative;background:#fff}
+canvas{width:100%!important;height:100%!important}
+.panel{
+  position:absolute;right:10px;top:10px;width:300px;
+  background:#fff;border-radius:10px;
+  box-shadow:0 6px 18px rgba(0,0,0,.15)
 }
-.primary{background:var(--primary);color:#fff}
-.secondary{background:#eef2f7}
-
-/* GRAPH */
-.canvas-wrap{
-  position:relative;
-  background:var(--card);
-  padding:16px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-}
-canvas{height:65vh!important}
-
-/* FLOATING CONTROLS */
-.floating-controls{
-  position:absolute;
-  right:14px;
-  bottom:14px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.floating-controls button{
-  width:44px;
-  height:44px;
-  border:none;
-  border-radius:50%;
-  background:var(--primary);
-  color:#fff;
-  font-size:20px;
-  font-weight:700;
-  box-shadow:0 6px 16px rgba(0,0,0,.25);
-}
-
-/* ACTION ROW */
-.action-row{
-  display:flex;
-  gap:12px;
-  margin-top:12px;
-}
-.action-row button{
-  flex:1;
-  background:var(--primary);
-  color:#fff;
-}
-@media(max-width:600px){
-  .action-row{flex-direction:column}
-}
-
-/* TABLE */
-.table-wrap{
-  margin-top:16px;
-  max-height:280px;
-  overflow:auto;
-  border:1px solid #e5e7eb;
-  border-radius:12px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:520px;
-}
-th{
-  background:var(--primary);
-  color:#fff;
-  padding:10px;
-  position:sticky;
-  top:0;
-}
-td{
-  padding:10px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:right;
-}
-td:first-child{text-align:left}
-
-/* MOBILE TABLE FIX */
-@media(max-width:768px){
-  .table-wrap{overflow-x:hidden}
-  table{min-width:100%}
-  th,td{font-size:14px;white-space:nowrap}
+.panel header{background:#2563eb;color:#fff;padding:8px 12px}
+.panel .body{padding:8px;max-height:260px;overflow:auto;font-size:14px}
+@media(max-width:900px){
+  .panel{position:static;width:100%;margin-top:10px}
 }
 </style>
 </head>
 
 <body>
-<div class="container">
+<div class="app">
 
-<div class="header">
-<h1>Advanced Graphing Calculator</h1>
-<p>Plot functions, derivatives, integrals, tables & share graphs instantly</p>
+<div class="sidebar">
+
+<h3>Graph Mode</h3>
+<select id="mode" onchange="draw()">
+  <option value="cartesian">y = f(x)</option>
+  <option value="polar">Polar (r = f(θ))</option>
+  <option value="parametric">Parametric</option>
+</select>
+
+<div class="row">
+<label>Function</label>
+<input id="fx" value="sin(x)">
 </div>
 
-<div class="grid">
+<div id="parametric" style="display:none">
+<div class="row">
+<label>x(t)</label>
+<input id="xt" value="cos(t)">
+</div>
+<div class="row">
+<label>y(t)</label>
+<input id="yt" value="sin(t)">
+</div>
+</div>
 
-<!-- INPUT PANEL -->
-<div class="card">
-<label>Function f(x)</label>
-<input id="fx" value="x*x">
+<div class="row">
+<label>Derivative</label>
+<input type="checkbox" id="deriv" checked>
+</div>
 
-<label>Derivative at x</label>
-<input id="dx" value="1">
-
-<label>Integral from a to b</label>
+<div class="row">
+<label>Integral (a → b)</label>
 <input id="a" value="0">
-<input id="b" value="2">
-
-<button class="primary" onclick="plot()">Plot Graph</button>
-<button class="secondary" onclick="resetAll()">Reset</button>
+<input id="b" value="3.14">
 </div>
 
-<!-- GRAPH PANEL -->
-<div>
-
-<div class="canvas-wrap">
-<canvas id="graphCanvas"></canvas>
-
-<div class="floating-controls">
-<button onclick="zoom(0.8)">＋</button>
-<button onclick="resetView()">⟳</button>
-<button onclick="zoom(1.25)">－</button>
+<div class="row">
+<input type="checkbox" id="roots" checked> Roots
+</div>
+<div class="row">
+<input type="checkbox" id="inter" checked> Intersections
 </div>
 
-<div class="action-row">
-<button onclick="downloadGraph()">📥 Download</button>
-<button onclick="copyShareLink()">🔗 Share</button>
-</div>
+<button class="btn" onclick="save()">💾 Save</button>
+<button class="btn alt" onclick="share()">🔗 Share</button>
+
 </div>
 
-<div class="card" style="margin-top:16px">
-<h3>Table of Values</h3>
-<div class="table-wrap">
-<table>
-<thead>
-<tr><th>x</th><th>f(x)</th></tr>
-</thead>
-<tbody id="table"></tbody>
-</table>
-</div>
-</div>
+<div class="graph-area">
+<canvas id="graph"></canvas>
 
+<div class="panel">
+<header>Key Points</header>
+<div class="body" id="info"></div>
+</div>
 </div>
 </div>
 
 <script>
 let chart;
-const fxInput=document.getElementById("fx");
-const aInput=document.getElementById("a");
-const bInput=document.getElementById("b");
+const info=document.getElementById("info");
 
-function f(x){
-  return Function("x","return "+fxInput.value)(x);
-}
-function derivative(x){
-  const h=0.0001;
-  return (f(x+h)-f(x-h))/(2*h);
+function F(expr,x){try{return Function("x","with(Math){return "+expr+"}")(x)}catch{return null}}
+function Ft(expr,t){try{return Function("t","with(Math){return "+expr+"}")(t)}catch{return null}}
+
+function derivative(expr,x){
+  const h=1e-5;
+  return (F(expr,x+h)-F(expr,x-h))/(2*h);
 }
 
-function plot(){
-  const xs=[],ys=[],der=[],shade=[];
-  for(let x=-10;x<=10;x+=0.1){
-    xs.push(x);
-    ys.push(f(x));
-    der.push(derivative(x));
-    shade.push(x>=+aInput.value && x<=+bInput.value ? f(x) : null);
+function draw(){
+  const mode=document.getElementById("mode").value;
+  document.getElementById("parametric").style.display=
+    mode==="parametric"?"block":"none";
+
+  const xs=[],ys=[],labels=[];
+  info.innerHTML="";
+
+  if(mode==="cartesian"){
+    for(let x=-10;x<=10;x+=0.05){
+      labels.push(x);
+      xs.push(x);
+      ys.push(F(fx.value,x));
+    }
   }
+
+  if(mode==="polar"){
+    for(let t=0;t<=Math.PI*2;t+=0.02){
+      const r=F(fx.value,t);
+      xs.push(r*Math.cos(t));
+      ys.push(r*Math.sin(t));
+      labels.push("");
+    }
+  }
+
+  if(mode==="parametric"){
+    for(let t=0;t<=Math.PI*2;t+=0.02){
+      xs.push(Ft(xt.value,t));
+      ys.push(Ft(yt.value,t));
+      labels.push("");
+    }
+  }
+
+  const datasets=[{
+    label:"Graph",
+    data:xs.map((x,i)=>({x,y:ys[i]})),
+    borderColor:"#2563eb",
+    pointRadius:0,
+    fill:false
+  }];
 
   chart?.destroy();
-  chart=new Chart(graphCanvas,{
-    type:"line",
-    data:{
-      labels:xs,
-      datasets:[
-        {label:"f(x)",data:ys,borderColor:"#2563eb",fill:false},
-        {label:"Derivative",data:der,borderColor:"#16a34a",borderDash:[6,6],fill:false},
-        {label:"Integral Area",data:shade,borderColor:"#f59e0b",backgroundColor:"rgba(245,158,11,.25)",fill:true}
-      ]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      scales:{
-        x:{min:-10,max:10},
-        y:{min:-10,max:10}
-      }
-    }
+  chart=new Chart(graph,{
+    type:"scatter",
+    data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false}
   });
-
-  renderTable(xs,ys);
 }
 
-function renderTable(xs,ys){
-  table.innerHTML="";
-  for(let i=0;i<xs.length;i+=10){
-    table.innerHTML+=`<tr><td>${xs[i].toFixed(2)}</td><td>${ys[i].toFixed(4)}</td></tr>`;
-  }
+function save(){
+  localStorage.setItem("graph10",JSON.stringify({
+    mode:mode.value,fx:fx.value,xt:xt.value,yt:yt.value
+  }));
+  alert("Saved");
 }
-
-function zoom(f){
-  chart.options.scales.x.min*=f;
-  chart.options.scales.x.max*=f;
-  chart.options.scales.y.min*=f;
-  chart.options.scales.y.max*=f;
-  chart.update();
-}
-function resetView(){
-  chart.options.scales.x.min=-10;
-  chart.options.scales.x.max=10;
-  chart.options.scales.y.min=-10;
-  chart.options.scales.y.max=10;
-  chart.update();
-}
-
-function downloadGraph(){
-  const a=document.createElement("a");
-  a.download="graph.png";
-  a.href=graphCanvas.toDataURL();
-  a.click();
-}
-function copyShareLink(){
-  const s=encodeURIComponent(JSON.stringify({fx:fxInput.value,a:aInput.value,b:bInput.value}));
-  navigator.clipboard.writeText(location.origin+location.pathname+"?g="+s);
-  alert("Share link copied!");
+function share(){
+  const d=btoa(JSON.stringify({
+    mode:mode.value,fx:fx.value,xt:xt.value,yt:yt.value
+  }));
+  navigator.clipboard.writeText(location.origin+location.pathname+"?g="+d);
+  alert("Link copied");
 }
 
 (function(){
   const p=new URLSearchParams(location.search);
-  if(!p.has("g")) return;
+  const d=p.get("g")||localStorage.getItem("graph10");
+  if(!d) return draw();
   try{
-    const s=JSON.parse(decodeURIComponent(p.get("g")));
-    fxInput.value=s.fx;
-    aInput.value=s.a;
-    bInput.value=s.b;
+    const s=JSON.parse(atob(d));
+    mode.value=s.mode||"cartesian";
+    fx.value=s.fx||"sin(x)";
+    xt.value=s.xt||"cos(t)";
+    yt.value=s.yt||"sin(t)";
   }catch{}
-  plot();
+  draw();
 })();
-
-function resetAll(){
-  fxInput.value="x*x";
-  aInput.value=0;
-  bInput.value=2;
-  plot();
-}
-
-plot();
 </script>
-
 </body>
 </html>
