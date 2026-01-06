@@ -13,7 +13,6 @@
 body{margin:0;font-family:system-ui;background:#f4f6fb}
 .app{display:flex;height:100vh}
 
-/* SIDEBAR */
 .sidebar{
   width:340px;background:#fff;border-right:1px solid #ddd;
   padding:14px;overflow:auto
@@ -36,26 +35,9 @@ button{
 .primary{background:#2563eb;color:#fff}
 .secondary{background:#eef2ff;color:#111;margin-top:8px}
 
-/* GRAPH AREA (FIX APPLIED HERE) */
-.graph-area{
-  flex:1;
-  position:relative;
-  background:#fff;
-  min-height:420px; /* desktop */
-}
+.graph-area{flex:1;position:relative;background:#fff}
+canvas{width:100%!important;height:100%!important}
 
-canvas{
-  width:100%!important;
-  height:420px!important; /* desktop */
-}
-
-/* MOBILE: taller graph */
-@media(max-width:768px){
-  .graph-area{min-height:520px}
-  canvas{height:520px!important}
-}
-
-/* ZOOM BUTTONS */
 .controls{
   position:absolute;right:12px;bottom:12px;
   display:flex;gap:10px
@@ -66,7 +48,6 @@ canvas{
   font-size:20px;cursor:pointer
 }
 
-/* TABLE */
 .table-wrap{
   margin-top:12px;max-height:220px;overflow:auto;
   border:1px solid #e5e7eb;border-radius:10px
@@ -116,8 +97,8 @@ td:first-child{text-align:left}
 <canvas id="graph"></canvas>
 
 <div class="controls">
-<button class="ctrl" onclick="chart.zoom(1.2)">+</button>
-<button class="ctrl" onclick="chart.zoom(0.8)">−</button>
+<button class="ctrl" onclick="chart && chart.zoom(1.2)">+</button>
+<button class="ctrl" onclick="chart && chart.zoom(0.8)">−</button>
 </div>
 </div>
 
@@ -126,6 +107,12 @@ td:first-child{text-align:left}
 <script>
 let chart;
 const table=document.getElementById("table");
+const graph=document.getElementById("graph");
+
+const f1=document.getElementById("f1");
+const f2=document.getElementById("f2");
+const f3=document.getElementById("f3");
+const tx=document.getElementById("tx");
 
 function fx(expr,x){
   try{return Function("x","with(Math){return "+expr+"}")(x)}
@@ -154,8 +141,7 @@ function plot(){
   const tan=xs.map(x=>m*(x-x0)+y0);
 
   for(let i=0;i<xs.length;i+=40){
-    table.innerHTML+=
-      `<tr><td>${xs[i].toFixed(2)}</td><td>${f1y[i]?.toFixed(4)}</td></tr>`;
+    table.innerHTML+=`<tr><td>${xs[i].toFixed(2)}</td><td>${f1y[i]?.toFixed(4)}</td></tr>`;
   }
 
   chart?.destroy();
@@ -178,22 +164,17 @@ function plot(){
         zoom:{
           pan:{enabled:true,mode:"xy"},
           zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"xy"}
-        },
-        tooltip:{
-          callbacks:{
-            label:(ctx)=>`x=${ctx.label.toFixed(2)}, y=${ctx.parsed.y?.toFixed(4)}`
-          }
         }
       },
-      scales:{x:{type:"linear"},y:{}}
+      scales:{x:{type:"linear"}}
     }
   });
 }
 
-function resetZoom(){chart.resetZoom()}
+function resetZoom(){chart && chart.resetZoom()}
 graph.addEventListener("dblclick",resetZoom);
+
 plot();
 </script>
-
 </body>
 </html>
