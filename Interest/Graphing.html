@@ -2,85 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Advanced Graphing Calculator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graphing Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<!-- Zoom Plugin -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
 <style>
 *{box-sizing:border-box}
 body{
   margin:0;
-  font-family:system-ui,-apple-system;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
   background:#f4f6fb;
-  overscroll-behavior:none;
 }
 .app{
   display:flex;
-  min-height:100svh; /* mobile safe */
+  height:100vh;
 }
-
-/* ===== SIDEBAR ===== */
 .sidebar{
   width:320px;
   background:#fff;
   border-right:1px solid #ddd;
   padding:14px;
-  overflow-y:auto;
+  overflow:auto;
 }
-h3{margin:6px 0 10px}
-label{font-size:14px;font-weight:600}
-input,select{
-  width:100%;
-  padding:10px;
-  margin-top:6px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  font-size:15px;
-}
-.row{margin-bottom:12px}
-
-.btn{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:8px;
-  font-weight:700;
-  cursor:pointer;
-}
-.btn.primary{background:#2563eb;color:#fff}
-.btn.alt{background:#eef2ff}
-
-/* ===== GRAPH AREA ===== */
-.graph-area{
-  flex:1;
-  position:relative;
-  background:#fff;
-  display:flex;
-  flex-direction:column;
-}
-.canvas-wrap{
-  flex:1;
-  position:relative;
-}
-canvas{
-  width:100%!important;
-  height:100%!important;
-}
-
-/* ===== INFO PANEL ===== */
-.panel{
-  background:#fff;
-  border-top:1px solid #e5e7eb;
-  padding:10px;
-  font-size:14px;
-}
-.panel h4{
-  margin:0 0 6px;
-  color:#2563eb;
-}
-
-/* ===== MOBILE ===== */
 @media(max-width:900px){
   .app{flex-direction:column}
   .sidebar{
@@ -89,177 +36,234 @@ canvas{
     border-bottom:1px solid #ddd;
   }
 }
+h2{
+  margin:0 0 10px;
+  color:#2563eb;
+}
+label{
+  font-size:14px;
+  font-weight:600;
+}
+input{
+  width:100%;
+  padding:10px;
+  margin:6px 0 12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:15px;
+}
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
+}
+.primary{background:#2563eb;color:#fff}
+.secondary{background:#eef2ff;color:#111;margin-top:8px}
+
+.graph-area{
+  flex:1;
+  position:relative;
+  background:#fff;
+}
+canvas{
+  width:100%!important;
+  height:100%!important;
+}
+
+/* Floating controls */
+.controls{
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  display:flex;
+  gap:10px;
+}
+.ctrl-btn{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  border:none;
+  font-size:20px;
+  background:#2563eb;
+  color:#fff;
+  cursor:pointer;
+}
+
+/* Table */
+.table-wrap{
+  margin-top:12px;
+  max-height:220px;
+  overflow:auto;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:420px;
+}
+th{
+  background:#2563eb;
+  color:#fff;
+  padding:8px;
+  position:sticky;
+  top:0;
+}
+td{
+  padding:8px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:right;
+}
+td:first-child{text-align:left}
+
+/* Mobile table fix */
+@media(max-width:768px){
+  table{min-width:100%}
+  .table-wrap{overflow-x:hidden}
+}
 </style>
 </head>
 
 <body>
 <div class="app">
 
-<!-- ===== CONTROLS ===== -->
+<!-- LEFT PANEL -->
 <div class="sidebar">
+  <h2>Graphing Calculator</h2>
 
-<h3>Graph Mode</h3>
-<select id="mode">
-  <option value="cartesian">y = f(x)</option>
-  <option value="polar">Polar r(θ)</option>
-  <option value="parametric">Parametric</option>
-</select>
+  <label>Function f(x)</label>
+  <input id="fx" value="sin(x)">
 
-<div class="row">
-<label>Function</label>
-<input id="fx" value="sin(x)">
+  <label>x min</label>
+  <input id="xmin" value="-10">
+
+  <label>x max</label>
+  <input id="xmax" value="10">
+
+  <button class="primary" onclick="plot()">Plot Graph</button>
+  <button class="secondary" onclick="resetZoom()">Reset Zoom</button>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>x</th><th>f(x)</th></tr>
+      </thead>
+      <tbody id="table"></tbody>
+    </table>
+  </div>
 </div>
 
-<div id="parametricBox" style="display:none">
-<div class="row">
-<label>x(t)</label>
-<input id="xt" value="cos(t)">
-</div>
-<div class="row">
-<label>y(t)</label>
-<input id="yt" value="sin(t)">
-</div>
-</div>
-
-<div class="row">
-<label>Integral a → b</label>
-<input id="a" value="0">
-<input id="b" value="3.14">
-</div>
-
-<button class="btn primary" onclick="draw()">Plot</button>
-<button class="btn alt" onclick="save()">Save</button>
-<button class="btn alt" onclick="share()">Share</button>
-
-</div>
-
-<!-- ===== GRAPH ===== -->
+<!-- GRAPH -->
 <div class="graph-area">
-<div class="canvas-wrap">
-<canvas id="graph"></canvas>
-</div>
+  <canvas id="graph"></canvas>
 
-<div class="panel">
-<h4>Graph Info</h4>
-<div id="info">Ready</div>
-</div>
+  <div class="controls">
+    <button class="ctrl-btn" onclick="zoomIn()">+</button>
+    <button class="ctrl-btn" onclick="zoomOut()">−</button>
+  </div>
 </div>
 
 </div>
 
 <script>
 let chart;
-const $=id=>document.getElementById(id);
-const info=$("info");
+const table=document.getElementById("table");
 
-function safeEval(expr,v,letter){
+function f(x){
   try{
-    return Function(letter,`with(Math){return ${expr}}`)(v);
+    return Function("x","with(Math){return "+fx.value+"}")(x);
   }catch{
     return null;
   }
 }
 
-function draw(){
-  const mode=$("mode").value;
-  $("parametricBox").style.display = mode==="parametric"?"block":"none";
+function plot(){
+  const xmin=+document.getElementById("xmin").value;
+  const xmax=+document.getElementById("xmax").value;
 
-  const points=[];
-  info.textContent="Plotting…";
+  const xs=[], ys=[];
+  table.innerHTML="";
 
-  if(mode==="cartesian"){
-    for(let x=-10;x<=10;x+=0.05){
-      const y=safeEval($("fx").value,x,"x");
-      if(y!==null && isFinite(y)) points.push({x,y});
+  for(let x=xmin;x<=xmax;x+=(xmax-xmin)/400){
+    const y=f(x);
+    if(y!==null && isFinite(y)){
+      xs.push(x);
+      ys.push(y);
     }
   }
 
-  if(mode==="polar"){
-    for(let t=0;t<=Math.PI*2;t+=0.02){
-      const r=safeEval($("fx").value,t,"x");
-      if(r!==null){
-        points.push({
-          x:r*Math.cos(t),
-          y:r*Math.sin(t)
-        });
-      }
-    }
-  }
-
-  if(mode==="parametric"){
-    for(let t=0;t<=Math.PI*2;t+=0.02){
-      const x=safeEval($("xt").value,t,"t");
-      const y=safeEval($("yt").value,t,"t");
-      if(x!==null && y!==null) points.push({x,y});
-    }
+  // Table values
+  for(let i=0;i<xs.length;i+=40){
+    table.innerHTML+=
+      `<tr><td>${xs[i].toFixed(2)}</td><td>${ys[i].toFixed(4)}</td></tr>`;
   }
 
   chart?.destroy();
   chart=new Chart(graph,{
-    type:"scatter",
+    type:"line",
     data:{
+      labels:xs,
       datasets:[{
-        label:"Graph",
-        data:points,
+        label:"f(x)",
+        data:ys,
         borderColor:"#2563eb",
         borderWidth:2,
-        showLine:true,
-        pointRadius:0
+        pointRadius:0,
+        fill:false
       }]
     },
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      animation:false,
+      interaction:{
+        mode:"nearest",
+        intersect:false
+      },
+      plugins:{
+        zoom:{
+          pan:{
+            enabled:true,
+            mode:"xy"
+          },
+          zoom:{
+            wheel:{enabled:true},
+            pinch:{enabled:true},
+            mode:"xy"
+          }
+        },
+        legend:{display:true}
+      },
       scales:{
-        x:{type:"linear"},
-        y:{type:"linear"}
+        x:{
+          type:"linear",
+          grid:{color:"#e5e7eb"}
+        },
+        y:{
+          grid:{color:"#e5e7eb"}
+        }
       }
     }
   });
-
-  info.textContent=`Points plotted: ${points.length}`;
 }
 
-function save(){
-  localStorage.setItem("graphState",JSON.stringify({
-    mode:mode.value,
-    fx:fx.value,
-    xt:xt.value,
-    yt:yt.value,
-    a:a.value,
-    b:b.value
-  }));
-  alert("Saved");
+function resetZoom(){
+  chart.resetZoom();
 }
 
-function share(){
-  const data=btoa(JSON.stringify({
-    mode:mode.value,
-    fx:fx.value,
-    xt:xt.value,
-    yt:yt.value
-  }));
-  navigator.clipboard.writeText(
-    location.origin+location.pathname+"?g="+data
-  );
-  alert("Link copied");
+function zoomIn(){
+  chart.zoom(1.2);
+}
+function zoomOut(){
+  chart.zoom(0.8);
 }
 
-(function init(){
-  const p=new URLSearchParams(location.search);
-  const s=p.get("g")||localStorage.getItem("graphState");
-  if(!s){ draw(); return; }
-  try{
-    const d=JSON.parse(atob(s));
-    Object.assign(window,d);
-    fx.value=d.fx||"sin(x)";
-    xt.value=d.xt||"cos(t)";
-    yt.value=d.yt||"sin(t)";
-    mode.value=d.mode||"cartesian";
-  }catch{}
-  draw();
-})();
+/* Double-tap / double-click reset */
+graph.addEventListener("dblclick",resetZoom);
+
+plot();
 </script>
 
 </body>
