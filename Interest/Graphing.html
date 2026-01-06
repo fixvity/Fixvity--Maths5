@@ -11,7 +11,7 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui;background:#f4f6fb}
-.app{display:flex;height:100vh}
+.app{display:flex;min-height:100vh}
 
 /* SIDEBAR */
 .sidebar{
@@ -25,7 +25,7 @@ body{margin:0;font-family:system-ui;background:#f4f6fb}
 
 h2{margin:0 0 10px;color:#2563eb}
 label{font-size:14px;font-weight:600}
-input{
+input,select{
   width:100%;padding:10px;margin:6px 0 12px;
   border-radius:8px;border:1px solid #ccc;font-size:15px
 }
@@ -40,6 +40,17 @@ button{
 .graph-area{flex:1;position:relative;background:#fff}
 canvas{width:100%!important;height:100%!important}
 
+/* Desktop balance */
+@media(min-width:901px){
+  .graph-area{max-height:720px}
+}
+
+/* Mobile graph */
+@media (max-width: 900px) {
+  .graph-area {height:65vh;min-height:420px}
+}
+
+/* Zoom buttons */
 .controls{
   position:absolute;right:12px;bottom:12px;
   display:flex;gap:10px
@@ -49,17 +60,7 @@ canvas{width:100%!important;height:100%!important}
   background:#2563eb;color:#fff;border:none;
   font-size:20px;cursor:pointer
 }
-/* MOBILE GRAPH HEIGHT FIX */
-@media (max-width: 900px) {
-  .graph-area {
-    height: 65vh;      /* taller chart */
-    min-height: 420px; /* ensures clarity */
-  }
 
-  canvas {
-    height: 100% !important;
-  }
-}
 /* TABLE */
 .table-wrap{
   margin-top:12px;max-height:220px;overflow:auto;
@@ -73,18 +74,25 @@ th{
 td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:right}
 td:first-child{text-align:left}
 
-/* POINT INSPECTOR */
+/* INSPECTOR */
 #inspector{
-  position:absolute;
-  background:#111827;
-  color:#fff;
-  padding:6px 10px;
-  border-radius:8px;
-  font-size:13px;
-  pointer-events:none;
-  display:none;
-  transform:translate(-50%,-120%);
-  white-space:nowrap;
+  position:absolute;background:#111827;color:#fff;
+  padding:6px 10px;border-radius:8px;
+  font-size:13px;pointer-events:none;
+  display:none;transform:translate(-50%,-120%);
+}
+
+/* MATH KEYBOARD */
+.mathkbd{
+  display:none;position:fixed;bottom:0;left:0;right:0;
+  background:#fff;border-top:1px solid #ddd;
+  padding:8px;z-index:99
+}
+.mathkbd button{
+  width:20%;padding:10px;margin:4px;font-weight:700
+}
+@media(max-width:900px){
+  .mathkbd{display:block}
 }
 </style>
 </head>
@@ -96,17 +104,17 @@ td:first-child{text-align:left}
 <div class="sidebar">
 <h2>Graphing Calculator</h2>
 
-<label>f(x)</label>
-<input id="f1" value="sin(x)">
+<label>f(x)</label><input id="f1" value="sin(x)">
+<label>g(x)</label><input id="f2" value="x*x">
+<label>h(x)</label><input id="f3" value="">
+<label>Tangent at x</label><input id="tx" value="1">
 
-<label>g(x)</label>
-<input id="f2" value="x*x">
-
-<label>h(x)</label>
-<input id="f3" value="">
-
-<label>Tangent at x</label>
-<input id="tx" value="1">
+<label>Axis Lock</label>
+<select id="axisMode">
+  <option value="xy">Free</option>
+  <option value="x">Lock X</option>
+  <option value="y">Lock Y</option>
+</select>
 
 <button class="primary" onclick="plot()">Plot</button>
 <button class="secondary" onclick="resetZoom()">Reset Zoom</button>
@@ -125,47 +133,72 @@ td:first-child{text-align:left}
 <div id="inspector"></div>
 
 <div class="controls">
-<button class="ctrl" onclick="chart && chart.zoom(1.2)">+</button>
-<button class="ctrl" onclick="chart && chart.zoom(0.8)">−</button>
+<button class="ctrl" onclick="chart.zoom(1.2)">+</button>
+<button class="ctrl" onclick="chart.zoom(0.8)">−</button>
+</div>
 </div>
 </div>
 
+<!-- MOBILE MATH KEYBOARD -->
+<div class="mathkbd">
+<button onclick="insert('sin(')">sin</button>
+<button onclick="insert('cos(')">cos</button>
+<button onclick="insert('tan(')">tan</button>
+<button onclick="insert('^')">^</button>
+<button onclick="insert('π')">π</button>
 </div>
 
 <script>
 let chart;
-const table=document.getElementById("table");
 const graph=document.getElementById("graph");
+const table=document.getElementById("table");
 const inspector=document.getElementById("inspector");
+let activeInput=null;
 
-const f1=document.getElementById("f1");
-const f2=document.getElementById("f2");
-const f3=document.getElementById("f3");
-const tx=document.getElementById("tx");
+document.querySelectorAll("input").forEach(i=>{
+  i.addEventListener("focus",()=>activeInput=i);
+});
 
-function fx(expr,x){
-  try{return Function("x","with(Math){return "+expr+"}")(x)}
-  catch{return null}
+function insert(v){
+  if(!activeInput) return;
+  activeInput.value+=v;
 }
 
+function fx(expr,x){
+  try{return Function("x","with(Math){return "+expr+"}")(x)}catch{return null}
+}
 function derivative(expr,x){
   const h=1e-4;
   return (fx(expr,x+h)-fx(expr,x-h))/(2*h);
 }
 
-function plot(){
-  const xs=[], f1y=[], f2y=[], f3y=[];
-  table.innerHTML="";
+/* Crosshair plugin */
+const crosshair={
+  id:"crosshair",
+  afterDraw(c,args,opts){
+    if(!c.tooltip?._active?.length) return;
+    const ctx=c.ctx;
+    const p=c.tooltip._active[0].element;
+    ctx.save();
+    ctx.strokeStyle="#999";
+    ctx.beginPath();
+    ctx.moveTo(p.x,0);ctx.lineTo(p.x,c.height);
+    ctx.moveTo(0,p.y);ctx.lineTo(c.width,p.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
 
+function plot(){
+  const xs=[],f1y=[],f2y=[],f3y=[];
+  table.innerHTML="";
   for(let x=-10;x<=10;x+=0.05){
     xs.push(x);
     f1y.push(fx(f1.value,x));
     f2y.push(f2.value?fx(f2.value,x):null);
     f3y.push(f3.value?fx(f3.value,x):null);
   }
-
-  const x0=+tx.value;
-  const y0=fx(f1.value,x0);
+  const x0=+tx.value,y0=fx(f1.value,x0);
   const m=derivative(f1.value,x0);
   const tan=xs.map(x=>m*(x-x0)+y0);
 
@@ -176,6 +209,7 @@ function plot(){
   chart?.destroy();
   chart=new Chart(graph,{
     type:"line",
+    plugins:[crosshair],
     data:{
       labels:xs,
       datasets:[
@@ -183,43 +217,31 @@ function plot(){
         {label:"g(x)",data:f2y,borderColor:"#16a34a",pointRadius:0},
         {label:"h(x)",data:f3y,borderColor:"#f59e0b",pointRadius:0},
         {label:"Tangent",data:tan,borderColor:"#dc2626",borderDash:[6,6],pointRadius:0},
-        {
-          label:"Point",
-          data:[],
-          pointRadius:6,
-          pointBackgroundColor:"#000",
-          showLine:false
-        }
+        {label:"Pins",data:[],showLine:false,pointRadius:6}
       ]
     },
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      interaction:{mode:"nearest",intersect:false},
       plugins:{
         zoom:{
-          pan:{enabled:true,mode:"xy"},
-          zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"xy"}
+          pan:{enabled:true,mode:axisMode.value},
+          zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:axisMode.value}
         }
       },
+      interaction:{mode:"nearest",intersect:false},
       scales:{x:{type:"linear"}},
-      onClick:(evt)=>{
-        const points=chart.getElementsAtEventForMode(
-          evt,"nearest",{intersect:false},true
-        );
-        if(!points.length) return;
-
-        const p=points[0];
+      onClick:(e)=>{
+        const p=chart.getElementsAtEventForMode(e,"nearest",{intersect:false},true)[0];
+        if(!p) return;
         const x=chart.data.labels[p.index];
         const y=chart.data.datasets[p.datasetIndex].data[p.index];
-
-        chart.data.datasets.at(-1).data=[{x,y}];
+        chart.data.datasets.at(-1).data.push({x,y});
         chart.update("none");
-
-        const rect=graph.getBoundingClientRect();
-        inspector.style.left=evt.clientX-rect.left+"px";
-        inspector.style.top=evt.clientY-rect.top+"px";
-        inspector.textContent=`x = ${x.toFixed(3)}, y = ${y.toFixed(4)}`;
+        const r=graph.getBoundingClientRect();
+        inspector.style.left=e.clientX-r.left+"px";
+        inspector.style.top=e.clientY-r.top+"px";
+        inspector.textContent=`x=${x.toFixed(3)}, y=${y.toFixed(4)}`;
         inspector.style.display="block";
       }
     }
@@ -227,11 +249,10 @@ function plot(){
 }
 
 function resetZoom(){
-  chart && chart.resetZoom();
+  chart.resetZoom();
   inspector.style.display="none";
 }
 
-graph.addEventListener("dblclick",resetZoom);
 plot();
 </script>
 </body>
