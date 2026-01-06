@@ -49,7 +49,17 @@ canvas{width:100%!important;height:100%!important}
   background:#2563eb;color:#fff;border:none;
   font-size:20px;cursor:pointer
 }
+/* MOBILE GRAPH HEIGHT FIX */
+@media (max-width: 900px) {
+  .graph-area {
+    height: 65vh;      /* taller chart */
+    min-height: 420px; /* ensures clarity */
+  }
 
+  canvas {
+    height: 100% !important;
+  }
+}
 /* TABLE */
 .table-wrap{
   margin-top:12px;max-height:220px;overflow:auto;
