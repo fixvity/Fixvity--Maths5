@@ -10,85 +10,158 @@
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui;background:#f4f6fb}
-.app{display:flex;height:100vh}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f4f6fb;
+}
+
+/* APP LAYOUT */
+.app{
+  display:flex;
+  height:100vh;
+}
 
 /* SIDEBAR */
 .sidebar{
-  width:340px;background:#fff;border-right:1px solid #ddd;
-  padding:14px;overflow:auto
+  width:340px;
+  background:#fff;
+  border-right:1px solid #ddd;
+  padding:14px;
+  overflow:auto;
 }
+
 @media(max-width:900px){
   .app{flex-direction:column}
-  .sidebar{width:100%;border-right:none;border-bottom:1px solid #ddd}
+  .sidebar{
+    width:100%;
+    border-right:none;
+    border-bottom:1px solid #ddd;
+  }
 }
 
 h2{margin:0 0 10px;color:#2563eb}
-
-/* MODE TOGGLE */
-.mode-toggle{
-  display:flex;gap:8px;margin-bottom:12px
-}
-.mode-toggle button{
-  flex:1;padding:10px;border:none;border-radius:8px;
-  font-weight:700;cursor:pointer;background:#eef2ff
-}
-.mode-toggle .active{
-  background:#2563eb;color:#fff
-}
-
 label{font-size:14px;font-weight:600}
+
 input{
-  width:100%;padding:10px;margin:6px 0 12px;
-  border-radius:8px;border:1px solid #ccc;font-size:15px
-}
-button.primary{
-  width:100%;padding:12px;border:none;border-radius:10px;
-  font-weight:700;cursor:pointer;background:#2563eb;color:#fff
-}
-button.secondary{
-  width:100%;padding:12px;border:none;border-radius:10px;
-  font-weight:700;cursor:pointer;background:#eef2ff;margin-top:8px
+  width:100%;
+  padding:10px;
+  margin:6px 0 12px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-size:15px;
 }
 
-/* GRAPH */
-.graph-area{flex:1;position:relative;background:#fff}
-canvas{width:100%!important;height:100%!important}
-
-@media(max-width:900px){
-  .graph-area{height:65vh;min-height:420px}
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-weight:700;
+  cursor:pointer;
 }
 
+.primary{background:#2563eb;color:#fff}
+.secondary{background:#eef2ff;color:#111;margin-top:8px}
+
+/* GRAPH AREA */
+.graph-area{
+  flex:1;
+  background:#fff;
+  position:relative;
+  display:flex;
+  align-items:center; /* DESKTOP FIX */
+}
+
+/* CANVAS CONTROL */
+canvas{
+  width:100%!important;
+  max-height:85vh;
+}
+
+/* DESKTOP HEIGHT BALANCE */
+@media (min-width:901px){
+  .graph-area{
+    height:calc(100vh - 40px);
+  }
+  canvas{
+    max-height:90%;
+  }
+}
+
+/* MOBILE GRAPH HEIGHT */
+@media (max-width:900px){
+  .graph-area{
+    height:65vh;
+    min-height:420px;
+  }
+  canvas{
+    height:100%!important;
+  }
+}
+
+/* ZOOM BUTTONS */
 .controls{
-  position:absolute;right:12px;bottom:12px;
-  display:flex;gap:10px
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  display:flex;
+  gap:10px;
 }
+
 .ctrl{
-  width:44px;height:44px;border-radius:50%;
-  background:#2563eb;color:#fff;border:none;
-  font-size:20px;cursor:pointer
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  font-size:20px;
+  cursor:pointer;
 }
 
 /* TABLE */
 .table-wrap{
-  margin-top:12px;max-height:220px;overflow:auto;
-  border:1px solid #e5e7eb;border-radius:10px
+  margin-top:12px;
+  max-height:220px;
+  overflow:auto;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
 }
-table{width:100%;border-collapse:collapse}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
 th{
-  background:#2563eb;color:#fff;padding:8px;
-  position:sticky;top:0
+  background:#2563eb;
+  color:#fff;
+  padding:8px;
+  position:sticky;
+  top:0;
 }
-td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:right}
+
+td{
+  padding:8px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:right;
+}
+
 td:first-child{text-align:left}
 
 /* POINT INSPECTOR */
 #inspector{
-  position:absolute;background:#111827;color:#fff;
-  padding:6px 10px;border-radius:8px;
-  font-size:13px;display:none;
+  position:absolute;
+  background:#111827;
+  color:#fff;
+  padding:6px 10px;
+  border-radius:8px;
+  font-size:13px;
+  pointer-events:none;
+  display:none;
   transform:translate(-50%,-120%);
-  white-space:nowrap;pointer-events:none
+  white-space:nowrap;
 }
 </style>
 </head>
@@ -100,48 +173,28 @@ td:first-child{text-align:left}
 <div class="sidebar">
 <h2>Graphing Calculator</h2>
 
-<div class="mode-toggle">
-  <button id="basicBtn" class="active">Basic</button>
-  <button id="advancedBtn">Advanced</button>
-</div>
+<label>f(x)</label>
+<input id="f1" value="sin(x)">
 
-<!-- BASIC MODE -->
-<div id="basicMode">
-  <label>Equation</label>
-  <input id="basicEq" value="y = 2*x + 1">
+<label>g(x)</label>
+<input id="f2" value="x*x">
 
-  <label>Window</label>
-  <input id="xmin" value="-10">
-  <input id="xmax" value="10">
-  <input id="ymin" value="-10">
-  <input id="ymax" value="10">
+<label>h(x)</label>
+<input id="f3" value="">
 
-  <button class="primary" onclick="plotBasic()">Graph</button>
-</div>
+<label>Tangent at x</label>
+<input id="tx" value="1">
 
-<!-- ADVANCED MODE -->
-<div id="advancedMode" style="display:none">
-  <label>f(x)</label>
-  <input id="f1" value="sin(x)">
+<button class="primary" onclick="plot()">Plot</button>
+<button class="secondary" onclick="resetZoom()">Reset Zoom</button>
 
-  <label>g(x)</label>
-  <input id="f2" value="x*x">
-
-  <label>h(x)</label>
-  <input id="f3" value="">
-
-  <label>Tangent at x</label>
-  <input id="tx" value="1">
-
-  <button class="primary" onclick="plot()">Plot</button>
-  <button class="secondary" onclick="resetZoom()">Reset Zoom</button>
-
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>x</th><th>f(x)</th></tr></thead>
-      <tbody id="table"></tbody>
-    </table>
-  </div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>x</th><th>f(x)</th></tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
 </div>
 </div>
 
@@ -151,8 +204,8 @@ td:first-child{text-align:left}
 <div id="inspector"></div>
 
 <div class="controls">
-  <button class="ctrl" onclick="chart.zoom(1.2)">+</button>
-  <button class="ctrl" onclick="chart.zoom(0.8)">−</button>
+<button class="ctrl" onclick="chart && chart.zoom(1.2)">+</button>
+<button class="ctrl" onclick="chart && chart.zoom(0.8)">−</button>
 </div>
 </div>
 
@@ -161,39 +214,29 @@ td:first-child{text-align:left}
 <script>
 let chart;
 const graph=document.getElementById("graph");
-const inspector=document.getElementById("inspector");
 const table=document.getElementById("table");
+const inspector=document.getElementById("inspector");
 
 const f1=document.getElementById("f1");
 const f2=document.getElementById("f2");
 const f3=document.getElementById("f3");
 const tx=document.getElementById("tx");
 
-/* MODE SWITCH */
-basicBtn.onclick=()=>{
-  basicMode.style.display="block";
-  advancedMode.style.display="none";
-  basicBtn.classList.add("active");
-  advancedBtn.classList.remove("active");
-};
-advancedBtn.onclick=()=>{
-  basicMode.style.display="none";
-  advancedMode.style.display="block";
-  advancedBtn.classList.add("active");
-  basicBtn.classList.remove("active");
-};
-
 function fx(expr,x){
-  try{return Function("x","with(Math){return "+expr+"}")(x)}
-  catch{return null}
+  try{
+    return Function("x","with(Math){return "+expr+"}")(x);
+  }catch{
+    return null;
+  }
 }
+
 function derivative(expr,x){
   const h=1e-4;
   return (fx(expr,x+h)-fx(expr,x-h))/(2*h);
 }
 
 function plot(){
-  const xs=[],f1y=[],f2y=[],f3y=[];
+  const xs=[], f1y=[], f2y=[], f3y=[];
   table.innerHTML="";
 
   for(let x=-10;x<=10;x+=0.05){
@@ -209,23 +252,13 @@ function plot(){
   const tan=xs.map(x=>m*(x-x0)+y0);
 
   for(let i=0;i<xs.length;i+=40){
-    table.innerHTML+=`<tr><td>${xs[i].toFixed(2)}</td><td>${f1y[i]?.toFixed(4)}</td></tr>`;
+    table.innerHTML+=`
+      <tr>
+        <td>${xs[i].toFixed(2)}</td>
+        <td>${f1y[i]?.toFixed(4)}</td>
+      </tr>`;
   }
 
-  renderChart(xs,f1y,f2y,f3y,tan);
-}
-
-function plotBasic(){
-  f1.value=document.getElementById("basicEq").value.replace("y=","");
-  plot();
-  chart.options.scales.x.min=+xmin.value;
-  chart.options.scales.x.max=+xmax.value;
-  chart.options.scales.y.min=+ymin.value;
-  chart.options.scales.y.max=+ymax.value;
-  chart.update();
-}
-
-function renderChart(xs,f1y,f2y,f3y,tan){
   chart?.destroy();
   chart=new Chart(graph,{
     type:"line",
@@ -236,7 +269,7 @@ function renderChart(xs,f1y,f2y,f3y,tan){
         {label:"g(x)",data:f2y,borderColor:"#16a34a",pointRadius:0},
         {label:"h(x)",data:f3y,borderColor:"#f59e0b",pointRadius:0},
         {label:"Tangent",data:tan,borderColor:"#dc2626",borderDash:[6,6],pointRadius:0},
-        {label:"Point",data:[],pointRadius:6,showLine:false}
+        {label:"Point",data:[],pointRadius:6,pointBackgroundColor:"#000",showLine:false}
       ]
     },
     options:{
@@ -251,18 +284,22 @@ function renderChart(xs,f1y,f2y,f3y,tan){
       },
       scales:{x:{type:"linear"}},
       onClick:(evt)=>{
-        const pts=chart.getElementsAtEventForMode(evt,"nearest",{intersect:false},true);
-        if(!pts.length)return;
+        const pts=chart.getElementsAtEventForMode(
+          evt,"nearest",{intersect:false},true
+        );
+        if(!pts.length) return;
+
         const p=pts[0];
         const x=chart.data.labels[p.index];
         const y=chart.data.datasets[p.datasetIndex].data[p.index];
+
         chart.data.datasets.at(-1).data=[{x,y}];
         chart.update("none");
 
         const r=graph.getBoundingClientRect();
         inspector.style.left=evt.clientX-r.left+"px";
         inspector.style.top=evt.clientY-r.top+"px";
-        inspector.textContent=`x=${x.toFixed(3)}, y=${y.toFixed(4)}`;
+        inspector.textContent=`x = ${x.toFixed(3)}, y = ${y.toFixed(4)}`;
         inspector.style.display="block";
       }
     }
@@ -270,7 +307,7 @@ function renderChart(xs,f1y,f2y,f3y,tan){
 }
 
 function resetZoom(){
-  chart.resetZoom();
+  chart && chart.resetZoom();
   inspector.style.display="none";
 }
 
