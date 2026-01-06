@@ -82,16 +82,38 @@ button{
 .primary{background:var(--primary);color:#fff}
 .secondary{background:#eef2f7}
 
-/* GRAPH AREA */
+/* GRAPH */
 .canvas-wrap{
+  position:relative;
   background:var(--card);
   padding:16px;
   border-radius:var(--radius);
   box-shadow:var(--shadow);
 }
-canvas{height:340px!important}
+canvas{height:65vh!important}
 
-/* ACTIONS */
+/* FLOATING CONTROLS */
+.floating-controls{
+  position:absolute;
+  right:14px;
+  bottom:14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.floating-controls button{
+  width:44px;
+  height:44px;
+  border:none;
+  border-radius:50%;
+  background:var(--primary);
+  color:#fff;
+  font-size:20px;
+  font-weight:700;
+  box-shadow:0 6px 16px rgba(0,0,0,.25);
+}
+
+/* ACTION ROW */
 .action-row{
   display:flex;
   gap:12px;
@@ -152,7 +174,7 @@ td:first-child{text-align:left}
 
 <div class="grid">
 
-<!-- LEFT -->
+<!-- INPUT PANEL -->
 <div class="card">
 <label>Function f(x)</label>
 <input id="fx" value="x*x">
@@ -168,10 +190,17 @@ td:first-child{text-align:left}
 <button class="secondary" onclick="resetAll()">Reset</button>
 </div>
 
-<!-- RIGHT -->
+<!-- GRAPH PANEL -->
 <div>
+
 <div class="canvas-wrap">
 <canvas id="graphCanvas"></canvas>
+
+<div class="floating-controls">
+<button onclick="zoom(0.8)">＋</button>
+<button onclick="resetView()">⟳</button>
+<button onclick="zoom(1.25)">－</button>
+</div>
 
 <div class="action-row">
 <button onclick="downloadGraph()">📥 Download</button>
@@ -196,10 +225,9 @@ td:first-child{text-align:left}
 
 <script>
 let chart;
-const fxInput = document.getElementById("fx");
-const dxInput = document.getElementById("dx");
-const aInput = document.getElementById("a");
-const bInput = document.getElementById("b");
+const fxInput=document.getElementById("fx");
+const aInput=document.getElementById("a");
+const bInput=document.getElementById("b");
 
 function f(x){
   return Function("x","return "+fxInput.value)(x);
@@ -215,8 +243,7 @@ function plot(){
     xs.push(x);
     ys.push(f(x));
     der.push(derivative(x));
-    if(x>=+aInput.value && x<=+bInput.value) shade.push(f(x));
-    else shade.push(null);
+    shade.push(x>=+aInput.value && x<=+bInput.value ? f(x) : null);
   }
 
   chart?.destroy();
@@ -230,7 +257,14 @@ function plot(){
         {label:"Integral Area",data:shade,borderColor:"#f59e0b",backgroundColor:"rgba(245,158,11,.25)",fill:true}
       ]
     },
-    options:{responsive:true,maintainAspectRatio:false}
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      scales:{
+        x:{min:-10,max:10},
+        y:{min:-10,max:10}
+      }
+    }
   });
 
   renderTable(xs,ys);
@@ -243,28 +277,33 @@ function renderTable(xs,ys){
   }
 }
 
-/* SAVE IMAGE */
-function downloadGraph(){
-  const link=document.createElement("a");
-  link.download="graph.png";
-  link.href=graphCanvas.toDataURL("image/png");
-  link.click();
+function zoom(f){
+  chart.options.scales.x.min*=f;
+  chart.options.scales.x.max*=f;
+  chart.options.scales.y.min*=f;
+  chart.options.scales.y.max*=f;
+  chart.update();
+}
+function resetView(){
+  chart.options.scales.x.min=-10;
+  chart.options.scales.x.max=10;
+  chart.options.scales.y.min=-10;
+  chart.options.scales.y.max=10;
+  chart.update();
 }
 
-/* SHARE URL */
+function downloadGraph(){
+  const a=document.createElement("a");
+  a.download="graph.png";
+  a.href=graphCanvas.toDataURL();
+  a.click();
+}
 function copyShareLink(){
-  const state={
-    fx:fxInput.value,
-    a:aInput.value,
-    b:bInput.value
-  };
-  const encoded=encodeURIComponent(JSON.stringify(state));
-  const url=location.origin+location.pathname+"?g="+encoded;
-  navigator.clipboard.writeText(url);
+  const s=encodeURIComponent(JSON.stringify({fx:fxInput.value,a:aInput.value,b:bInput.value}));
+  navigator.clipboard.writeText(location.origin+location.pathname+"?g="+s);
   alert("Share link copied!");
 }
 
-/* RESTORE */
 (function(){
   const p=new URLSearchParams(location.search);
   if(!p.has("g")) return;
@@ -273,8 +312,8 @@ function copyShareLink(){
     fxInput.value=s.fx;
     aInput.value=s.a;
     bInput.value=s.b;
-    plot();
   }catch{}
+  plot();
 })();
 
 function resetAll(){
