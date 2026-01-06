@@ -2,322 +2,198 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Advanced Graphing Calculator</title>
+<title>Graphing Calculator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
 <style>
-:root{
-  --primary:#2563eb;
-  --bg:#f4f7fb;
-  --card:#ffffff;
-  --text:#111827;
-  --muted:#6b7280;
-  --radius:14px;
-  --shadow:0 10px 30px rgba(0,0,0,.08);
-}
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:system-ui,Inter,Arial;
-  background:var(--bg);
-  color:var(--text);
-}
-.container{
-  max-width:1200px;
-  margin:auto;
-  padding:14px;
-}
+body{margin:0;font-family:system-ui;background:#f4f6fb}
+.app{display:flex;height:100vh}
 
-/* HEADER */
-.header{
-  background:var(--card);
-  padding:18px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  text-align:center;
-}
-.header h1{margin:0;color:var(--primary)}
-.header p{margin:6px 0 0;color:var(--muted)}
-
-/* LAYOUT */
-.grid{
-  display:grid;
-  grid-template-columns:320px 1fr;
-  gap:16px;
-  margin-top:16px;
+/* SIDEBAR */
+.sidebar{
+  width:340px;background:#fff;border-right:1px solid #ddd;
+  padding:14px;overflow:auto
 }
 @media(max-width:900px){
-  .grid{grid-template-columns:1fr}
+  .app{flex-direction:column}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid #ddd}
 }
 
-/* CARD */
-.card{
-  background:var(--card);
-  padding:16px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-}
-
-/* INPUTS */
+h2{margin:0 0 10px;color:#2563eb}
 label{font-size:14px;font-weight:600}
 input{
-  width:100%;
-  padding:10px;
-  margin-top:6px;
-  margin-bottom:12px;
-  border-radius:10px;
-  border:1px solid #e5e7eb;
-  font-size:15px;
+  width:100%;padding:10px;margin:6px 0 12px;
+  border-radius:8px;border:1px solid #ccc;font-size:15px
 }
 button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  font-weight:700;
-  cursor:pointer;
+  width:100%;padding:12px;border:none;border-radius:10px;
+  font-weight:700;cursor:pointer
 }
-.primary{background:var(--primary);color:#fff}
-.secondary{background:#eef2f7}
+.primary{background:#2563eb;color:#fff}
+.secondary{background:#eef2ff;color:#111;margin-top:8px}
 
-/* GRAPH */
-.graph-wrap{
-  background:var(--card);
-  padding:14px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
+/* GRAPH AREA (FIX APPLIED HERE) */
+.graph-area{
+  flex:1;
+  position:relative;
+  background:#fff;
+  min-height:420px; /* desktop */
 }
+
 canvas{
-  height:360px!important;
-  touch-action:manipulation;
+  width:100%!important;
+  height:420px!important; /* desktop */
 }
 
-/* ACTIONS */
-.action-row{
-  display:flex;
-  gap:10px;
-  margin-top:12px;
+/* MOBILE: taller graph */
+@media(max-width:768px){
+  .graph-area{min-height:520px}
+  canvas{height:520px!important}
 }
-.action-row button{flex:1}
-@media(max-width:600px){
-  .action-row{flex-direction:column}
+
+/* ZOOM BUTTONS */
+.controls{
+  position:absolute;right:12px;bottom:12px;
+  display:flex;gap:10px
+}
+.ctrl{
+  width:44px;height:44px;border-radius:50%;
+  background:#2563eb;color:#fff;border:none;
+  font-size:20px;cursor:pointer
 }
 
 /* TABLE */
 .table-wrap{
-  margin-top:16px;
-  max-height:260px;
-  overflow:auto;
-  border-radius:12px;
-  border:1px solid #e5e7eb;
+  margin-top:12px;max-height:220px;overflow:auto;
+  border:1px solid #e5e7eb;border-radius:10px
 }
-table{
-  width:100%;
-  border-collapse:collapse;
-}
+table{width:100%;border-collapse:collapse}
 th{
-  position:sticky;
-  top:0;
-  background:var(--primary);
-  color:#fff;
-  padding:10px;
+  background:#2563eb;color:#fff;padding:8px;
+  position:sticky;top:0
 }
-td{
-  padding:10px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:right;
-}
+td{padding:8px;border-bottom:1px solid #e5e7eb;text-align:right}
 td:first-child{text-align:left}
 </style>
 </head>
 
 <body>
-<div class="container">
+<div class="app">
 
-<!-- HEADER -->
-<div class="header">
-  <h1>Advanced Graphing Calculator</h1>
-  <p>Tap the graph to place a tangent line instantly</p>
-</div>
+<!-- SIDEBAR -->
+<div class="sidebar">
+<h2>Graphing Calculator</h2>
 
-<div class="grid">
+<label>f(x)</label>
+<input id="f1" value="sin(x)">
 
-<!-- LEFT PANEL -->
-<div class="card">
-  <label>Function f(x)</label>
-  <input id="fx" value="sin(x)">
+<label>g(x)</label>
+<input id="f2" value="x*x">
 
-  <label>Integral from a to b</label>
-  <input id="a" value="0">
-  <input id="b" value="3.14">
+<label>h(x)</label>
+<input id="f3" value="">
 
-  <button class="primary" onclick="plot()">Plot Graph</button>
-  <button class="secondary" onclick="resetAll()">Reset</button>
-</div>
+<label>Tangent at x</label>
+<input id="tx" value="1">
 
-<!-- RIGHT PANEL -->
-<div>
+<button class="primary" onclick="plot()">Plot</button>
+<button class="secondary" onclick="resetZoom()">Reset Zoom</button>
 
-<div class="graph-wrap">
-  <canvas id="graphCanvas"></canvas>
-
-  <div class="action-row">
-    <button class="primary" onclick="downloadGraph()">📥 Download</button>
-    <button class="primary" onclick="shareGraph()">🔗 Share</button>
-  </div>
-</div>
-
-<div class="card" style="margin-top:16px">
-  <h3>Table of Values</h3>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr><th>x</th><th>f(x)</th></tr>
-      </thead>
-      <tbody id="table"></tbody>
-    </table>
-  </div>
-</div>
-
+<div class="table-wrap">
+<table>
+<thead><tr><th>x</th><th>f(x)</th></tr></thead>
+<tbody id="table"></tbody>
+</table>
 </div>
 </div>
+
+<!-- GRAPH -->
+<div class="graph-area">
+<canvas id="graph"></canvas>
+
+<div class="controls">
+<button class="ctrl" onclick="chart.zoom(1.2)">+</button>
+<button class="ctrl" onclick="chart.zoom(0.8)">−</button>
+</div>
+</div>
+
 </div>
 
 <script>
-const fxInput=document.getElementById("fx");
-const aInput=document.getElementById("a");
-const bInput=document.getElementById("b");
-const graphCanvas=document.getElementById("graphCanvas");
+let chart;
 const table=document.getElementById("table");
 
-let chart;
-let tangentX=null;
-
-/* SAFE FUNCTION */
-function f(x){
-  try{
-    return Function("x","with(Math){return "+fxInput.value+"}")(x);
-  }catch{return NaN;}
+function fx(expr,x){
+  try{return Function("x","with(Math){return "+expr+"}")(x)}
+  catch{return null}
 }
 
-/* NUMERICAL DERIVATIVE */
-function derivative(x){
+function derivative(expr,x){
   const h=1e-4;
-  return (f(x+h)-f(x-h))/(2*h);
+  return (fx(expr,x+h)-fx(expr,x-h))/(2*h);
 }
 
-/* MAIN PLOT */
 function plot(){
-  const xs=[],ys=[],tan=[];
-  const step=0.05;
+  const xs=[], f1y=[], f2y=[], f3y=[];
+  table.innerHTML="";
 
-  for(let x=-10;x<=10;x+=step){
+  for(let x=-10;x<=10;x+=0.05){
     xs.push(x);
-    ys.push(f(x));
+    f1y.push(fx(f1.value,x));
+    f2y.push(f2.value?fx(f2.value,x):null);
+    f3y.push(f3.value?fx(f3.value,x):null);
+  }
 
-    if(tangentX!==null){
-      const m=derivative(tangentX);
-      const y0=f(tangentX);
-      tan.push(m*(x-tangentX)+y0);
-    }
+  const x0=+tx.value;
+  const y0=fx(f1.value,x0);
+  const m=derivative(f1.value,x0);
+  const tan=xs.map(x=>m*(x-x0)+y0);
+
+  for(let i=0;i<xs.length;i+=40){
+    table.innerHTML+=
+      `<tr><td>${xs[i].toFixed(2)}</td><td>${f1y[i]?.toFixed(4)}</td></tr>`;
   }
 
   chart?.destroy();
-  chart=new Chart(graphCanvas,{
+  chart=new Chart(graph,{
     type:"line",
     data:{
       labels:xs,
       datasets:[
-        {
-          label:"f(x)",
-          data:ys,
-          borderColor:"#2563eb",
-          borderWidth:2,
-          pointRadius:0
-        },
-        {
-          label:"Tangent",
-          data:tangentX!==null?tan:[],
-          borderColor:"#dc2626",
-          borderDash:[6,6],
-          borderWidth:2,
-          pointRadius:0
-        }
+        {label:"f(x)",data:f1y,borderColor:"#2563eb",pointRadius:0},
+        {label:"g(x)",data:f2y,borderColor:"#16a34a",pointRadius:0},
+        {label:"h(x)",data:f3y,borderColor:"#f59e0b",pointRadius:0},
+        {label:"Tangent",data:tan,borderColor:"#dc2626",borderDash:[6,6],pointRadius:0}
       ]
     },
     options:{
       responsive:true,
       maintainAspectRatio:false,
       interaction:{mode:"nearest",intersect:false},
-      scales:{x:{type:"linear"}}
+      plugins:{
+        zoom:{
+          pan:{enabled:true,mode:"xy"},
+          zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"xy"}
+        },
+        tooltip:{
+          callbacks:{
+            label:(ctx)=>`x=${ctx.label.toFixed(2)}, y=${ctx.parsed.y?.toFixed(4)}`
+          }
+        }
+      },
+      scales:{x:{type:"linear"},y:{}}
     }
   });
-
-  renderTable(xs,ys);
 }
 
-/* TAP / CLICK TO PLACE TANGENT */
-graphCanvas.addEventListener("click",(evt)=>{
-  const p=chart.getElementsAtEventForMode(
-    evt,"nearest",{intersect:false},true
-  );
-  if(!p.length) return;
-  tangentX=chart.data.labels[p[0].index];
-  plot();
-});
-
-/* TABLE */
-function renderTable(xs,ys){
-  table.innerHTML="";
-  for(let i=0;i<xs.length;i+=20){
-    table.innerHTML+=
-      `<tr><td>${xs[i].toFixed(2)}</td><td>${ys[i].toFixed(4)}</td></tr>`;
-  }
-}
-
-/* DOWNLOAD */
-function downloadGraph(){
-  const a=document.createElement("a");
-  a.download="graph.png";
-  a.href=graphCanvas.toDataURL("image/png");
-  a.click();
-}
-
-/* SHARE */
-function shareGraph(){
-  const data=btoa(JSON.stringify({
-    fx:fxInput.value,
-    a:aInput.value,
-    b:bInput.value
-  }));
-  navigator.clipboard.writeText(
-    location.origin+location.pathname+"?g="+data
-  );
-  alert("Share link copied");
-}
-
-/* RESTORE */
-(function(){
-  const p=new URLSearchParams(location.search);
-  if(!p.has("g")) return plot();
-  try{
-    const s=JSON.parse(atob(p.get("g")));
-    fxInput.value=s.fx||"sin(x)";
-    aInput.value=s.a||0;
-    bInput.value=s.b||3.14;
-  }catch{}
-  plot();
-})();
-
-function resetAll(){
-  fxInput.value="sin(x)";
-  tangentX=null;
-  plot();
-}
-
+function resetZoom(){chart.resetZoom()}
+graph.addEventListener("dblclick",resetZoom);
 plot();
 </script>
+
 </body>
 </html>
